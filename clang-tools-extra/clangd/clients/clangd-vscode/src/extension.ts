@@ -88,16 +88,29 @@ export function activate(context: vscode.ExtensionContext) {
   // having a corresponding 'onLanguage:...' activation event in package.json.
   // However, VSCode does not have CUDA as a supported language yet, so we
   // cannot add a corresponding activationEvent for CUDA files and clangd will
-  // *not* load itself automatically on '.cu' files.
-  const cudaFilePattern: string = '**/*.{' + [ 'cu' ].join() + '}';
+  // *not* load itself automatically on '.cu' and '.cuh' files.
+  const cudaFilePatterns: {scheme: string, pattern: string}[] = [
+    {scheme : 'file', pattern : '**/*.{cu}'},
+    {scheme : 'file', pattern : '**/*.{cuh}'}
+  ];
   const clientOptions: vscodelc.LanguageClientOptions = {
         // Register the server for c-family and cuda files.
         documentSelector: [
             { scheme: 'file', language: 'c' },
             { scheme: 'file', language: 'cpp' },
+            // Optimistically register an activation event for the 'cuda'
+            // language id. This should be forwards-compatible if VSCode
+            // starts shipping CUDA language support. A working 'cuda'
+            // language definition is provided by kriegalex.vscode-cudacpp.
+            // This handler ensures clangd activates if the vscode-cudacpp
+            // plugin is installed and activated.
+            // @see https://github.com/kriegalex/vscode-cuda
+            // @see https://marketplace.visualstudio.com/items?itemName=kriegalex.vscode-cudacpp
+            { scheme: 'file', language: 'cuda' },
             { scheme: 'file', language: 'objective-c'},
             { scheme: 'file', language: 'objective-cpp'},
-            { scheme: 'file', pattern: cudaFilePattern },
+            // Also add the '.cu' and '.cuh' patterns
+            ...cudaFilePatterns
         ],
         synchronize: !syncFileEvents ? undefined : {
         // FIXME: send sync file events when clangd provides implemenatations.
@@ -111,10 +124,10 @@ export function activate(context: vscode.ExtensionContext) {
                                                 serverOptions, clientOptions);
   if (getConfig<boolean>('semanticHighlighting')) {
     const semanticHighlightingFeature =
-      new semanticHighlighting.SemanticHighlightingFeature(clangdClient,
-        context);
+        new semanticHighlighting.SemanticHighlightingFeature(clangdClient,
+                                                             context);
     context.subscriptions.push(
-      vscode.Disposable.from(semanticHighlightingFeature));
+        vscode.Disposable.from(semanticHighlightingFeature));
     clangdClient.registerFeature(semanticHighlightingFeature);
   }
   console.log('Clang Language Server is now active!');

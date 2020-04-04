@@ -114,6 +114,10 @@ static types::ID foldType(types::ID Lang) {
   case types::TY_ObjCXX:
   case types::TY_ObjCXXHeader:
     return types::TY_ObjCXX;
+  case types::TY_CUDA:
+  case types::TY_CUDA_DEVICE:
+  case types::TY_CUDA_FATBIN:
+    return types::TY_CUDA;
   default:
     return types::TY_INVALID;
   }

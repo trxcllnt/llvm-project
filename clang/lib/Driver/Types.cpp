@@ -295,7 +295,9 @@ types::ID types::lookupTypeForTypeSpecifier(const char *Name) {
         strcmp(Name, getInfo(Id).Name) == 0)
       return Id;
   }
-
+  if (strcmp(Name, "cu") == 0) {
+    return types::TY_CUDA;
+  }
   return TY_INVALID;
 }
 
